@@ -1,34 +1,35 @@
 <?php
-require_once 'db.php';
-$conn = Database::connect();
-
-// index.php - List Issues
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-$stmt = $conn->query("SELECT * FROM iss_issues");
-$issues = $stmt->fetchAll(PDO::FETCH_ASSOC);
+include('db.php');
+include('login.php');
+ensure_logged_in();
+
 ?>
+
 <!DOCTYPE html>
 <html>
-<head><title>Issues</title></head>
+<head>
+    <title>Issue Tracker - Home</title>
+</head>
 <body>
-<h2>Issue Tracker</h2>
+<h2>Welcome to the Issue Tracking App</h2>
+<p>You are logged in!</p>
 <a href="new_issue.php">Create New Issue</a>
-<table border="1">
-    <tr><th>ID</th><th>Title</th><th>Priority</th><th>Actions</th></tr>
-    <?php foreach ($issues as $row) { ?>
-
-    <tr>
-        <td><?= $row['id'] ?></td>
-        <td><a href="issue.php?id=<?= $row['id'] ?>"><?= $row['short_description'] ?></a></td>
-        <td><?= $row['priority'] ?></td>
-        <td><a href="delete_issue.php?id=<?= $row['id'] ?>">Delete</a></td>
-    </tr>
-    <?php } ?>
-</table>
 <a href="logout.php">Logout</a>
+
+<h3>Existing Issues:</h3>
+<ul>
+<?php
+$query = "SELECT * FROM issues ORDER BY created_at DESC";
+$result = mysqli_query($conn, $query);
+if ($result && mysqli_num_rows($result) > 0) {
+    while ($issue = mysqli_fetch_assoc($result)) {
+        echo "<li>" . htmlspecialchars($issue['title']) . " - " . htmlspecialchars($issue['description']) . "</li>";
+    }
+} else {
+    echo "<p>No issues found.</p>";
+}
+?>
+</ul>
 </body>
 </html>

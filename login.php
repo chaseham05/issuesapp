@@ -1,40 +1,52 @@
 <?php
-// login.php - User Authentication
-require_once 'db.php';
 session_start();
-$conn = Database::connect();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+// Check if db.php exists
+if (!file_exists('db.php')) {
+    die("Database configuration file not found.");
+}
+include('db.php');
 
-    try {
-        $stmt = $conn->prepare("SELECT id, fname, lname, pwd_hash, pwd_salt FROM iss_persons WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+// Check if connection was successful
+if (!$conn) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
 
-        if ($user && hash('sha256', $user['pwd_salt'] . $password) === $user['pwd_hash']) {
+// Login Script
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $username = mysqli_real_escape_string($conn, $_POST['username']);
+    $password = mysqli_real_escape_string($conn, $_POST['password']);
+
+    $query = "SELECT * FROM users WHERE username='$username'";
+    $result = mysqli_query($conn, $query);
+    if ($result && mysqli_num_rows($result) > 0) {
+        $user = mysqli_fetch_assoc($result);
+        if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['name'] = $user['fname'] . ' ' . $user['lname'];
-            header("Location: index.php");
+            header('Location: index.php');
             exit();
         } else {
-            echo "Invalid email or password.";
+            $error = 'Invalid username or password';
         }
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+    } else {
+        $error = 'User not found';
     }
 }
+
 ?>
 
 <!DOCTYPE html>
 <html>
-<head><title>Login</title></head>
+<head>
+    <title>Login</title>
+</head>
 <body>
-<form method="post" action="login.php">
-    Email: <input type="email" name="email" required><br>
-    Password: <input type="password" name="password" required><br>
-    <button type="submit">Login</button>
+<h2>Login</h2>
+<form method="POST" action="login.php">
+    <input type="text" name="username" placeholder="Username" required><br>
+    <input type="password" name="password" placeholder="Password" required><br>
+    <button type="submit" name="login">Login</button>
 </form>
+<?php if (isset($error)) echo '<p>' . $error . '</p>'; ?>
 </body>
 </html>

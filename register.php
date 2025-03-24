@@ -1,38 +1,35 @@
 <?php
-// register.php - User Registration
-require_once 'db.php';
-$conn = Database::connect();
+session_start();
+include('db.php');
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $fname = $_POST['fname'];
-    $lname = $_POST['lname'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    
-    // Generate a unique salt
-    $salt = bin2hex(random_bytes(16));
-    $pwd_hash = hash('sha256', $salt . $password);
+// Registration Script
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
+    $username = mysqli_real_escape_string($conn, $_POST['username']);
+    $password = password_hash(mysqli_real_escape_string($conn, $_POST['password']), PASSWORD_BCRYPT);
 
-    try {
-        $stmt = $conn->prepare("INSERT INTO iss_persons (fname, lname, email, pwd_hash, pwd_salt) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$fname, $lname, $email, $pwd_hash, $salt]);
-        echo "Registration successful. <a href='login.php'>Login here</a>";
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+    $query = "INSERT INTO users (username, password) VALUES ('$username', '$password')";
+    if (mysqli_query($conn, $query)) {
+        header('Location: login.php');
+        exit();
+    } else {
+        $error = 'Registration failed';
     }
 }
+
 ?>
 
 <!DOCTYPE html>
 <html>
-<head><title>Register</title></head>
+<head>
+    <title>Register</title>
+</head>
 <body>
-<form method="post" action="register.php">
-    First Name: <input type="text" name="fname" required><br>
-    Last Name: <input type="text" name="lname" required><br>
-    Email: <input type="email" name="email" required><br>
-    Password: <input type="password" name="password" required><br>
-    <button type="submit">Register</button>
+<h2>Register</h2>
+<form method="POST" action="register.php">
+    <input type="text" name="username" placeholder="Username" required><br>
+    <input type="password" name="password" placeholder="Password" required><br>
+    <button type="submit" name="register">Register</button>
 </form>
+<?php if (isset($error)) echo '<p>' . $error . '</p>'; ?>
 </body>
 </html>

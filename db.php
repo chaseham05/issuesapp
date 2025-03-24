@@ -1,35 +1,15 @@
 <?php
-class Database {
-    private static $dbName = 'cis355';
-    private static $dbHost = 'localhost';
-    private static $dbUsername = 'root';
-    private static $dbUserPassword = '';
+// Database connection
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "issue_tracking";
 
-    private static $connection = null;
+// Create connection
+$conn = mysqli_connect($servername, $username, $password, $database);
 
-    public function __construct() {
-        exit('No constructor required for class: Database');
-    }
-
-    public static function connect() {
-        if (null == self::$connection) {
-            try {
-                self::$connection = new PDO(
-                    "mysql:host=" . self::$dbHost . ";dbname=" . self::$dbName,
-                    self::$dbUsername,
-                    self::$dbUserPassword,
-                    array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)
-                );
-            } catch (PDOException $e) {
-                die("Database connection failed: " . $e->getMessage());
-            }
-        }
-        return self::$connection;
-    }
-
-    public static function disconnect() {
-        self::$connection = null;
-    }
+// Check connection
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
 }
 ?>
-
